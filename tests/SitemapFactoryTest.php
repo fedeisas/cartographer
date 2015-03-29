@@ -114,4 +114,23 @@ XML;
         $this->setExpectedException('InvalidArgumentException', 'Url is missing or not accessible.');
         $this->factory->createSitemap(new ArrayIterator([[]]));
     }
+
+    public function testLargeSitemapCreatesIndexWithCompression()
+    {
+        $urls = [];
+        for ($i = 1; $i <= 50002; $i++) {
+            $urls[] = ['url' => 'http://foo.com/'.$i];
+        }
+        $this->factory->setCompress(true);
+        $path = $this->factory->createSitemap(new ArrayIterator($urls));
+        $this->assertTrue($this->filesystem->has($path));
+
+        foreach ($this->factory->getFilesCreated() as $file) {
+            if (!strpos($file, 'SitemapIndex')) {
+                $this->assertContains('.gz', $file);
+            }
+            $this->assertTrue($this->filesystem->has($file));
+            $this->filesystem->delete($file);
+        }
+    }
 }

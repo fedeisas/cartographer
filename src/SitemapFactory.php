@@ -26,6 +26,11 @@ class SitemapFactory
     protected $filesCreated = [];
 
     /**
+     * @var bool
+     */
+    protected $compress = false;
+
+    /**
      * @param FilesystemInterface $filesystem
      */
     public function __construct(FilesystemInterface $filesystem)
@@ -71,6 +76,26 @@ class SitemapFactory
     public function getFilesCreated()
     {
         return $this->filesCreated;
+    }
+
+    /**
+     * Should the script compress files.
+     *
+     * @return bool
+     */
+    public function getCompress()
+    {
+        return $this->compress;
+    }
+
+    /**
+     * Set compression.
+     *
+     * @param bool $compress
+     */
+    public function setCompress($compress)
+    {
+        $this->compress = (bool) $compress;
     }
 
     /**
@@ -152,8 +177,14 @@ class SitemapFactory
         $className = (new \ReflectionClass($sitemap))->getShortName();
         $fileName = "{$groupName}.{$className}.{$index}.xml";
         $this->filesystem->write($fileName, $sitemap->toString());
-        array_push($this->filesCreated, $fileName);
         $index++;
+
+        if ($this->getCompress() && $sitemap instanceof Sitemap) {
+            $fileName = $fileName . '.gz';
+            $this->filesystem->write($fileName, gzencode($sitemap->toString(), 9));
+        }
+
+        array_push($this->filesCreated, $fileName);
 
         return $fileName;
     }
